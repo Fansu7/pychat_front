@@ -1,0 +1,17 @@
+.main-container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Opcional: ajusta el ancho del aside */
+app-aside {
+  width: 300px;
+  border-right: 1px solid #ddd;
+}
+
+/* El chatbox ocupará el resto del espacio */
+app-chatbox {
+  flex: 1;
+  display: flex; /* Para que su propio layout funcione */
+  flex-direction: column;
+}
