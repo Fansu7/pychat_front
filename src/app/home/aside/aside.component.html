@@ -1,0 +1,16 @@
+<aside class="chat-aside">
+  <div>
+    <h2 class="title">Usuarios</h2>
+    <ul class="user-list">
+      <li
+        class="user"
+        *ngFor="let user of users"
+        (click)="seleccionarUsuario(user)"
+      >
+        <div class="avatar">{{ user.username.charAt(0).toUpperCase() }}</div>
+        <span class="nickname">{{ user.username }}</span>
+      </li>
+    </ul>
+  </div>
+  <button (click)="logout()">Logout</button>
+</aside>
