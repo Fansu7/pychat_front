@@ -22,7 +22,7 @@ export class LoginService {
       exp: number;
     }
 
-    const url = `${API_ENDPOINT}/token'`;
+    const url = `${API_ENDPOINT}/token`;
     const formData = new URLSearchParams();
     formData.set('username', username);
     formData.set('password', password);
