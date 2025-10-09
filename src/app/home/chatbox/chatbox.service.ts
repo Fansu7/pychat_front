@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { API_ENDPOINT } from '../../constants';
 
 @Injectable({
   providedIn: 'root',
@@ -13,7 +14,7 @@ export class ChatboxService {
   selectedUser$ = this.selectedUserSource.asObservable();
 
   connect(userId: number): void {
-    const websocketUrl = `ws://localhost:8000/ws/${userId}`;
+    const websocketUrl = `wss://${API_ENDPOINT}/ws/${userId}`;
     this.socket = new WebSocket(websocketUrl);
     console.log('Conectado al websocket:', this.socket);
 
@@ -35,13 +36,13 @@ export class ChatboxService {
   constructor(private http: HttpClient) {}
 
   getMensajes(user: any) {
-    const url = `http://localhost:8000/messages/${user}`;
+    const url = `${API_ENDPOINT}/messages/${user}`;
     const headers = new HttpHeaders({ 'content-type': 'application/json' });
     return this.http.get(url, { headers });
   }
 
   enviarMensaje(mensaje: any) {
-    const url = 'http://localhost:8000/messages/';
+    const url = `${API_ENDPOINT}/messages/`;
     const headers = new HttpHeaders({ 'content-type': 'application/json' });
 
     if (this.socket?.readyState === WebSocket.OPEN) {

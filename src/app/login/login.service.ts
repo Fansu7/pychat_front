@@ -4,6 +4,7 @@ import { catchError, Observable, tap, throwError } from 'rxjs';
 import { webSocket } from 'rxjs/webSocket';
 import { jwtDecode } from 'jwt-decode';
 import { ChatboxService } from '../home/chatbox/chatbox.service';
+import { API_ENDPOINT } from '../constants';
 
 @Injectable({
   providedIn: 'root',
@@ -21,7 +22,7 @@ export class LoginService {
       exp: number;
     }
 
-    const url = 'http://localhost:8000/token';
+    const url = `${API_ENDPOINT}/token'`;
     const formData = new URLSearchParams();
     formData.set('username', username);
     formData.set('password', password);

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
+import { API_ENDPOINT } from '../constants';
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +13,7 @@ export class AuthService {
 
   login(username: string, password: string) {
     return this.http
-      .post<{ access_token: string }>('http://localhost:8000/token', {
+      .post<{ access_token: string }>(`${API_ENDPOINT}/token`, {
         username,
         password,
       })
