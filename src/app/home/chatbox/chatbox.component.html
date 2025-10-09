@@ -1,25 +1,40 @@
-<div class="chatbox">
-  <div class="messages">
-    <div
-      class="message"
-      *ngFor="let msg of mensajes"
-      [ngClass]="{
-        sent: msg.sender_id === currentUserId,
-        received: msg.sender_id !== currentUserId
-      }"
-    >
-      <span class="sender">{{ msg.sender_nickname }}:</span><br />
-      <span class="text">{{ msg.content }}</span>
+<ng-container *ngIf="currentUser as u">
+  <div class="chatbox">
+    <div class="messages">
+      <div
+        class="message"
+        *ngFor="let msg of mensajes"
+        [ngClass]="{
+          sent:
+            msg.sender_id != null
+              ? msg.sender_id === u.id
+              : msg.sender_nickname === u.username,
+          received:
+            msg.sender_id != null
+              ? msg.sender_id !== u.id
+              : msg.sender_nickname !== u.username
+        }"
+      >
+        <span class="sender">
+          {{
+            msg.sender_nickname ||
+              (msg.sender_id != null && msg.sender_id === u.id
+                ? u.username
+                : selectedUser?.username || "")
+          }}: </span
+        ><br />
+        <span class="text">{{ msg.content }}</span>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input
+        type="text"
+        [(ngModel)]="nuevoMensaje"
+        placeholder="Escribe un mensaje..."
+        (keydown.enter)="enviarMensaje()"
+      />
+      <button (click)="enviarMensaje()">Enviar</button>
     </div>
   </div>
-
-  <div class="input-area">
-    <input
-      type="text"
-      [(ngModel)]="nuevoMensaje"
-      placeholder="Escribe un mensaje..."
-      (keydown.enter)="enviarMensaje()"
-    />
-    <button (click)="enviarMensaje()">Enviar</button>
-  </div>
-</div>
+</ng-container>
