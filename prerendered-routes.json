@@ -1,7 +1,0 @@
-{
-  "routes": {
-    "/pychat_front": {},
-    "/pychat_front/home": {},
-    "/pychat_front/login": {}
-  }
-}
