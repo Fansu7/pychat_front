@@ -1,15 +1,19 @@
-// auth.interceptor.ts
 import { HttpInterceptorFn } from '@angular/common/http';
-import { API_ENDPOINT } from '../../constants';
+import { inject } from '@angular/core';
+import { AuthService } from '../auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('access_token'); // misma key que guardas en login
-  const isApi = req.url.startsWith(API_ENDPOINT); // 'https://chat-back-bs8c.onrender.com'
-  const isLogin = req.url === `${API_ENDPOINT}/token`;
+  const auth = inject(AuthService);
+  const token = auth.getToken();
 
-  return next(
-    token && isApi && !isLogin
-      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-      : req
-  );
+  if (token) {
+    const cloned = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return next(cloned);
+  }
+
+  return next(req);
 };
