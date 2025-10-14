@@ -1,7 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, tap, throwError } from 'rxjs';
-import { webSocket } from 'rxjs/webSocket';
 import { jwtDecode } from 'jwt-decode';
 import { ChatboxService } from '../home/chatbox/chatbox.service';
 import { API_ENDPOINT } from '../constants';
@@ -22,7 +21,8 @@ export class LoginService {
       exp: number;
     }
 
-    const url = `${API_ENDPOINT}/token'`;
+    const url = `${API_ENDPOINT}/token`;
+
     const formData = new URLSearchParams();
     formData.set('username', username);
     formData.set('password', password);
@@ -33,9 +33,10 @@ export class LoginService {
 
     return this.http.post(url, formData.toString(), { headers }).pipe(
       tap((res: any) => {
-        localStorage.setItem('access_token', res.access_token);
-        const userId = jwtDecode<tokenResponse>(res.access_token).userId;
-        this.chatboxService.connect(userId);
+        const token = res.access_token;
+        localStorage.setItem('access_token', token);
+
+        this.chatboxService.connect(token);
       }),
       catchError((error) => {
         console.error('Error de login:', error);
