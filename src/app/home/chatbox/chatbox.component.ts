@@ -24,6 +24,9 @@ export class ChatboxComponent {
     if (token) {
       const decoded = jwtDecode<tokenResponse>(token);
       this.currentUserId = decoded.userId;
+      this.chatboxService.connect(token);
+    } else {
+      console.error('No hay access_token en localStorage');
     }
 
     this.chatboxService.selectedUser$.subscribe((user) => {
@@ -38,8 +41,9 @@ export class ChatboxComponent {
         message.sender_id === this.selectedUser?.id ||
         message.receiver_id === this.selectedUser?.id
       ) {
+        this.mensajes.push(message);
       }
-      this.mensajes.push(message);
+
       console.log('Incoming realtime message:', message);
     });
   }
@@ -57,15 +61,16 @@ export class ChatboxComponent {
   }
 
   enviarMensaje() {
-    if (this.nuevoMensaje.trim() === '') {
+    if (!this.nuevoMensaje || this.nuevoMensaje.trim() === '') {
       return;
     }
+    if (!this.selectedUser) return;
 
     const mensaje = {
       sender_id: jwtDecode<tokenResponse>(localStorage.getItem('access_token')!)
         .userId,
       receiver_id: this.selectedUser.id,
-      content: this.nuevoMensaje,
+      content: this.nuevoMensaje.trim(),
     };
 
     this.chatboxService.enviarMensaje(mensaje);

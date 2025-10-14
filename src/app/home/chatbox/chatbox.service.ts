@@ -13,8 +13,12 @@ export class ChatboxService {
 
   selectedUser$ = this.selectedUserSource.asObservable();
 
-  connect(userId: number): void {
-    const websocketUrl = `wss://${API_ENDPOINT}/ws/${userId}`;
+  connect(token: string): void {
+    const wsBase = API_ENDPOINT.startsWith('http')
+      ? API_ENDPOINT.replace(/^http/, 'ws')
+      : `wss://${API_ENDPOINT}`;
+
+    const websocketUrl = `${wsBase}/ws?token=${encodeURIComponent(token)}`;
     this.socket = new WebSocket(websocketUrl);
     console.log('Conectado al websocket:', this.socket);
 
@@ -35,18 +39,19 @@ export class ChatboxService {
 
   constructor(private http: HttpClient) {}
 
-  getMensajes(user: any) {
-    const url = `${API_ENDPOINT}/messages/${user}`;
-    const headers = new HttpHeaders({ 'content-type': 'application/json' });
+  getMensajes(userId: number) {
+    const url = `${API_ENDPOINT}/messages/${userId}`;
+    const token = localStorage.getItem('access_token') || '';
+    const headers = token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+      : undefined;
     return this.http.get(url, { headers });
   }
 
   enviarMensaje(mensaje: any) {
-    const url = `${API_ENDPOINT}/messages/`;
-    const headers = new HttpHeaders({ 'content-type': 'application/json' });
-
     if (this.socket?.readyState === WebSocket.OPEN) {
       const payload = {
+        type: 'message',
         receiver_id: mensaje.receiver_id,
         content: mensaje.content,
       };
@@ -56,7 +61,7 @@ export class ChatboxService {
       console.error('WebSocket not connected');
     }
 
-    return this.http.post(url, mensaje, { headers });
+    return;
   }
 
   getMensajesStream() {
