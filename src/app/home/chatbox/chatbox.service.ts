@@ -48,7 +48,7 @@ export class ChatboxService {
     if (this.socket?.readyState === WebSocket.OPEN) {
       const payload = {
         receiver_id: mensaje.receiver_id,
-        message: mensaje.content,
+        content: mensaje.content,
       };
       this.socket.send(JSON.stringify(payload));
       console.log('Mensaje enviado a través de WebSocket:', payload);
