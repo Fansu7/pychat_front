@@ -1,4 +1,4 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatboxService } from './chatbox.service';
@@ -8,13 +8,14 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chatbox',
+  standalone: true,
   imports: [FormsModule, CommonModule],
   templateUrl: './chatbox.component.html',
-  styleUrl: './chatbox.component.css',
+  styleUrls: ['./chatbox.component.css'],
 })
-export class ChatboxComponent implements OnDestroy {
+export class ChatboxComponent implements OnInit, OnDestroy {
   currentUserId!: number;
-  nuevoMensaje: string = '';
+  nuevoMensaje = '';
   mensajes: any[] = [];
   selectedUser: any = null;
 
@@ -25,36 +26,28 @@ export class ChatboxComponent implements OnDestroy {
   ngOnInit(): void {
     const token = localStorage.getItem('access_token');
     if (token) {
-      let decoded: tokenResponse | null = null;
       try {
-        decoded = jwtDecode<tokenResponse>(token);
+        const decoded = jwtDecode<tokenResponse>(token);
+        if (decoded?.userId) {
+          this.currentUserId = decoded.userId;
+          this.chatboxService.connect(token);
+        }
       } catch (e) {
         console.error('Token inválido:', e);
-      }
-      if (decoded?.userId) {
-        this.currentUserId = decoded.userId;
-        console.log('[WS] token prefix =>', token.slice(0, 16));
-        this.chatboxService.connect(token);
       }
     } else {
       console.error('No hay access_token en localStorage');
     }
 
-    // selectedUser$
     this.subs.add(
       this.chatboxService.selectedUser$.subscribe((user) => {
-        if (!user) {
-          this.selectedUser = null;
-          this.mensajes = [];
-          return;
-        }
-        this.selectedUser = user;
+        this.selectedUser = user ?? null;
         this.mensajes = [];
-        this.cargarMensajes(user.id);
+        if (user?.id) this.cargarMensajes(user.id);
       })
     );
 
-    // stream WS
+    // stream de WS
     this.subs.add(
       this.chatboxService.getMensajesStream().subscribe((message) => {
         if (!message) return;
@@ -69,23 +62,18 @@ export class ChatboxComponent implements OnDestroy {
         }
 
         if (this.selectedUser) {
-          if (sid === sel || rid === sel) {
-            this.mensajes.push(message);
-          }
+          if (sid === sel || rid === sel) this.mensajes.push(message);
         } else {
-          if (sid === this.currentUserId || rid === this.currentUserId) {
+          if (sid === this.currentUserId || rid === this.currentUserId)
             this.mensajes.push(message);
-          }
         }
-
-        console.log('Incoming realtime message:', message);
       })
     );
   }
 
   ngOnDestroy(): void {
-    // <-- NUEVO
     this.subs.unsubscribe();
+    this.chatboxService.disconnect();
   }
 
   cargarMensajes(userId: number): void {
@@ -93,7 +81,6 @@ export class ChatboxComponent implements OnDestroy {
     this.chatboxService.getMensajes(userId).subscribe({
       next: (response) => {
         this.mensajes = Array.isArray(response) ? response : [];
-        console.log('Fetched messages:', this.mensajes);
       },
       error: (error) => {
         console.error('Error fetching messages:', error);
@@ -103,15 +90,12 @@ export class ChatboxComponent implements OnDestroy {
 
   enviarMensaje() {
     const content = this.nuevoMensaje?.trim();
-    if (!content) return;
-    if (!this.selectedUser) return;
+    if (!content || !this.selectedUser) return;
 
-    const mensaje = {
+    this.chatboxService.enviarMensaje({
       receiver_id: this.selectedUser.id,
       content,
-    };
-
-    this.chatboxService.enviarMensaje(mensaje);
+    });
     this.nuevoMensaje = '';
   }
 }
