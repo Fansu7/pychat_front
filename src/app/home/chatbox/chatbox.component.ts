@@ -24,7 +24,6 @@ export class ChatboxComponent {
     if (token) {
       const decoded = jwtDecode<tokenResponse>(token);
       this.currentUserId = decoded.userId;
-      console.log('[WS] token prefix =>', token?.slice(0, 16));
       this.chatboxService.connect(token);
     } else {
       console.error('No hay access_token en localStorage');
