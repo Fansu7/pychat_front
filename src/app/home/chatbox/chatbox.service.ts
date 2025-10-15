@@ -19,6 +19,9 @@ export class ChatboxService {
       : `wss://${API_ENDPOINT}`;
 
     const websocketUrl = `${wsBase}/ws?token=${encodeURIComponent(token)}`;
+    console.log('[WS] API_ENDPOINT =>', API_ENDPOINT);
+    console.log('[WS] URL usada =>', websocketUrl);
+
     this.socket = new WebSocket(websocketUrl);
     console.log('Conectado al websocket:', this.socket);
 
