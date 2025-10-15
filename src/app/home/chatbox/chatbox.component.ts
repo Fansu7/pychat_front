@@ -42,14 +42,18 @@ export class ChatboxComponent {
     });
 
     this.chatboxService.getMensajesStream().subscribe((message) => {
-      if (!this.selectedUser) return;
-
       const sid = Number(message.sender_id);
       const rid = Number(message.receiver_id);
-      const sel = Number(this.selectedUser.id);
+      const sel = Number(this.selectedUser?.id);
 
-      if (sid === sel || rid === sel) {
-        this.mensajes.push(message);
+      if (this.selectedUser) {
+        if (sid === sel || rid === sel) {
+          this.mensajes.push(message);
+        }
+      } else {
+        if (sid === this.currentUserId || rid === this.currentUserId) {
+          this.mensajes.push(message);
+        }
       }
 
       console.log('Incoming realtime message:', message);
