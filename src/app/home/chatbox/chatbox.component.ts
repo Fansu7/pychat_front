@@ -25,23 +25,29 @@ export class ChatboxComponent {
       const decoded = jwtDecode<tokenResponse>(token);
       this.currentUserId = decoded.userId;
       console.log('[WS] token prefix =>', token?.slice(0, 16));
-      this.chatboxService.connect(token);
     } else {
       console.error('No hay access_token en localStorage');
     }
 
     this.chatboxService.selectedUser$.subscribe((user) => {
+      if (!user) {
+        this.selectedUser = null;
+        this.mensajes = [];
+        return;
+      }
       this.selectedUser = user;
-      this.cargarMensajes(user);
+      this.mensajes = [];
+      this.cargarMensajes(user.id);
     });
 
     this.chatboxService.getMensajesStream().subscribe((message) => {
       if (!this.selectedUser) return;
 
-      if (
-        message.sender_id === this.selectedUser?.id ||
-        message.receiver_id === this.selectedUser?.id
-      ) {
+      const sid = Number(message.sender_id);
+      const rid = Number(message.receiver_id);
+      const sel = Number(this.selectedUser.id);
+
+      if (sid === sel || rid === sel) {
         this.mensajes.push(message);
       }
 
