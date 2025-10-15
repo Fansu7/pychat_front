@@ -25,6 +25,7 @@ export class ChatboxComponent {
       const decoded = jwtDecode<tokenResponse>(token);
       this.currentUserId = decoded.userId;
       console.log('[WS] token prefix =>', token?.slice(0, 16));
+      this.chatboxService.connect(token);
     } else {
       console.error('No hay access_token en localStorage');
     }
@@ -55,8 +56,8 @@ export class ChatboxComponent {
     });
   }
 
-  cargarMensajes(user: any): void {
-    this.chatboxService.getMensajes(user.id).subscribe(
+  cargarMensajes(userId: number): void {
+    this.chatboxService.getMensajes(userId).subscribe(
       (response) => {
         this.mensajes = response;
         console.log('Fetched messages:', this.mensajes);
