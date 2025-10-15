@@ -35,8 +35,6 @@ export class LoginService {
       tap((res: any) => {
         const token = res.access_token;
         localStorage.setItem('access_token', token);
-
-        this.chatboxService.connect(token);
       }),
       catchError((error) => {
         console.error('Error de login:', error);
