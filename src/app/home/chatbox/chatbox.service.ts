@@ -147,24 +147,26 @@ export class ChatboxService {
 
   enviarMensaje(mensaje: { receiver_id: number; content: string }) {
     const payload = {
-      type: 'message',
       receiver_id: mensaje.receiver_id,
       content: mensaje.content,
-      ts: Date.now(),
     };
 
-    if (this.socket?.readyState === WebSocket.OPEN && this.isOpen) {
-      try {
-        console.log('Message sent in real time');
-        console.log(payload);
-        this.socket.send(JSON.stringify(payload));
-      } catch (e) {
-        console.error('[WS] send error, encolo', e);
-        this.pendingQueue.push(payload);
-      }
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(payload));
+    } else if (this.socket?.readyState === WebSocket.CONNECTING) {
+      const handler = () => {
+        try {
+          this.socket?.send(JSON.stringify(payload));
+        } finally {
+          this.socket?.removeEventListener('open', handler);
+        }
+      };
+      this.socket.addEventListener('open', handler, { once: true });
     } else {
-      this.pendingQueue.push(payload);
+      console.warn('[WS] no conectado; solo persistirá por HTTP');
     }
+
+    return this.http.post(`${API_ENDPOINT}/messages/`, payload);
   }
 
   getMensajesStream() {

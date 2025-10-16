@@ -47,7 +47,6 @@ export class ChatboxComponent implements OnInit, OnDestroy {
       })
     );
 
-    // stream de WS
     this.subs.add(
       this.chatboxService.getMensajesStream().subscribe((message) => {
         if (!message) return;
@@ -56,10 +55,7 @@ export class ChatboxComponent implements OnInit, OnDestroy {
         const rid = Number((message as any).receiver_id);
         const sel = Number(this.selectedUser?.id);
 
-        if (Number.isNaN(sid) || Number.isNaN(rid)) {
-          console.warn('[WS] mensaje sin ids válidos:', message);
-          return;
-        }
+        if (Number.isNaN(sid) || Number.isNaN(rid)) return;
 
         if (this.selectedUser) {
           if (sid === sel || rid === sel) this.mensajes.push(message);
@@ -92,10 +88,13 @@ export class ChatboxComponent implements OnInit, OnDestroy {
     const content = this.nuevoMensaje?.trim();
     if (!content || !this.selectedUser) return;
 
-    this.chatboxService.enviarMensaje({
-      receiver_id: this.selectedUser.id,
-      content,
-    });
-    this.nuevoMensaje = '';
+    this.chatboxService
+      .enviarMensaje({ receiver_id: this.selectedUser.id, content })
+      .subscribe({
+        next: () => {
+          this.nuevoMensaje = '';
+        },
+        error: (err) => console.error('POST /messages error', err),
+      });
   }
 }
