@@ -88,9 +88,11 @@ export class ChatboxComponent implements OnInit, OnDestroy {
     const content = this.nuevoMensaje?.trim();
     if (!content || !this.selectedUser) return;
 
-    this.chatboxService.enviarMensaje({
-      receiver_id: this.selectedUser.id,
+    const ok = this.chatboxService.enviarMensaje({
+      receiver_id: Number(this.selectedUser.id),
       content,
     });
+
+    if (ok) this.nuevoMensaje = '';
   }
 }

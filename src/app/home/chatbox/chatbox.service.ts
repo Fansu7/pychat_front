@@ -35,6 +35,7 @@ export class ChatboxService {
     this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
+      console.log('[WS] open', url);
       this.flushQueue();
     };
 
@@ -88,18 +89,28 @@ export class ChatboxService {
     return this.http.get(`${this.API_BASE}/messages/${otherUserId}`);
   }
 
-  enviarMensaje(mensaje: { receiver_id: number; content: string }) {
+  enviarMensaje(mensaje: { receiver_id: number; content: string }): boolean {
     const payload = {
-      receiver_id: mensaje.receiver_id,
-      content: mensaje.content,
+      receiver_id: Number(mensaje.receiver_id),
+      content: mensaje.content.trim(),
     };
+
+    console.log(
+      '[WS] send try | readyState=',
+      this.socket?.readyState,
+      payload
+    );
+
+    if (!payload.content) return false;
 
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(payload));
+      return true;
     } else if (this.socket?.readyState === WebSocket.CONNECTING) {
       const handler = () => {
         try {
           this.socket?.send(JSON.stringify(payload));
+          console.log('[WS] sent after open');
         } finally {
           this.socket?.removeEventListener('open', handler);
         }
@@ -108,11 +119,9 @@ export class ChatboxService {
       this.pendingQueue.push(payload);
       return true;
     } else {
-      this.pendingQueue.push(payload);
-      console.warn('[WS] no conectado; el mensaje se envía solo por HTTP');
+      console.warn('[WS] no conectado; no se encola (sin reconexión)');
+      return false;
     }
-
-    return false;
   }
 
   getMensajesStream() {
