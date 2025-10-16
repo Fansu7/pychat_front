@@ -106,12 +106,13 @@ export class ChatboxService {
       };
       this.socket.addEventListener('open', handler, { once: true });
       this.pendingQueue.push(payload);
+      return true;
     } else {
       this.pendingQueue.push(payload);
       console.warn('[WS] no conectado; el mensaje se envía solo por HTTP');
     }
 
-    return this.http.post(`${this.API_BASE}/messages/`, payload);
+    return false;
   }
 
   getMensajesStream() {
