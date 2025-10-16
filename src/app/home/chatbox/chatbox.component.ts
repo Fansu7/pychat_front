@@ -58,10 +58,13 @@ export class ChatboxComponent implements OnInit, OnDestroy {
         if (Number.isNaN(sid) || Number.isNaN(rid)) return;
 
         if (this.selectedUser) {
-          if (sid === sel || rid === sel) this.mensajes.push(message);
+          if (sid === sel || rid === sel) {
+            this.mensajes = [...this.mensajes, message];
+          }
         } else {
-          if (sid === this.currentUserId || rid === this.currentUserId)
-            this.mensajes.push(message);
+          if (sid === this.currentUserId || rid === this.currentUserId) {
+            this.mensajes = [...this.mensajes, message];
+          }
         }
       })
     );

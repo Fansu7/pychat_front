@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { API_ENDPOINT } from '../../constants';
 
@@ -16,7 +16,7 @@ export class ChatboxService {
   private readonly API_BASE = API_ENDPOINT;
   private readonly WS_BASE = this.API_BASE.replace(/^http/, 'ws');
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private zone: NgZone) {}
 
   private buildWsUrl(token: string): string {
     return `${this.WS_BASE}/ws?token=${encodeURIComponent(token)}`;
@@ -42,7 +42,7 @@ export class ChatboxService {
     this.socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        this.mensajeSubject.next(data);
+        this.zone.run(() => this.mensajeSubject.next(data));
       } catch (e) {
         console.error('[WS] JSON inválido:', e, event.data);
       }
