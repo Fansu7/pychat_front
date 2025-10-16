@@ -48,23 +48,28 @@ export class ChatboxComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
-      this.chatboxService.getMensajesStream().subscribe((message) => {
-        if (!message) return;
+      this.chatboxService.getMensajesStream().subscribe((msg) => {
+        if (!msg) return;
 
-        const sid = Number((message as any).sender_id);
-        const rid = Number((message as any).receiver_id);
         const sel = Number(this.selectedUser?.id);
 
-        if (Number.isNaN(sid) || Number.isNaN(rid)) return;
-
+        // Si hay usuario seleccionado: muestra los que sean entre currentUserId y ese usuario
         if (this.selectedUser) {
-          if (sid === sel || rid === sel) {
-            this.mensajes = [...this.mensajes, message];
+          if (
+            (msg.sender_id === this.currentUserId && msg.receiver_id === sel) ||
+            (msg.sender_id === sel && msg.receiver_id === this.currentUserId)
+          ) {
+            this.mensajes = [...this.mensajes, msg];
           }
-        } else {
-          if (sid === this.currentUserId || rid === this.currentUserId) {
-            this.mensajes = [...this.mensajes, message];
-          }
+          return;
+        }
+
+        // Si no hay seleccionado: muestra todo lo que involucre a currentUserId
+        if (
+          msg.sender_id === this.currentUserId ||
+          msg.receiver_id === this.currentUserId
+        ) {
+          this.mensajes = [...this.mensajes, msg];
         }
       })
     );

@@ -3,13 +3,22 @@ import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { API_ENDPOINT } from '../../constants';
 
+export interface ChatMessage {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  created_at: string;
+  sender_nickname?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatboxService {
   private socket: WebSocket | null = null;
   private readonly pendingQueue: any[] = [];
 
   private selectedUserSource = new BehaviorSubject<any>(null);
-  private mensajeSubject = new Subject<any>();
+  private mensajeSubject = new Subject<ChatMessage>();
 
   selectedUser$ = this.selectedUserSource.asObservable();
 
@@ -41,7 +50,7 @@ export class ChatboxService {
 
     this.socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data) as ChatMessage;
         this.zone.run(() => this.mensajeSubject.next(data));
       } catch (e) {
         console.error('[WS] JSON inválido:', e, event.data);
