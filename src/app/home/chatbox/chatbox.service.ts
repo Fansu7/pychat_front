@@ -155,6 +155,8 @@ export class ChatboxService {
 
     if (this.socket?.readyState === WebSocket.OPEN && this.isOpen) {
       try {
+        console.log('Message sent in real time');
+        console.log(payload);
         this.socket.send(JSON.stringify(payload));
       } catch (e) {
         console.error('[WS] send error, encolo', e);
