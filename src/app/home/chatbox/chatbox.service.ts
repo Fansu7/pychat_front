@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { API_ENDPOINT } from '../../constants';
@@ -6,10 +6,6 @@ import { API_ENDPOINT } from '../../constants';
 @Injectable({ providedIn: 'root' })
 export class ChatboxService {
   private socket: WebSocket | null = null;
-  private isOpen = false;
-  private reconnectAttempts = 0;
-  private pingTimer: any = null;
-  private readonly maxBackoff = 15000;
   private readonly pendingQueue: any[] = [];
 
   private selectedUserSource = new BehaviorSubject<any>(null);
@@ -17,22 +13,13 @@ export class ChatboxService {
 
   selectedUser$ = this.selectedUserSource.asObservable();
 
+  private readonly API_BASE = API_ENDPOINT;
+  private readonly WS_BASE = this.API_BASE.replace(/^http/, 'ws');
+
   constructor(private http: HttpClient) {}
 
   private buildWsUrl(token: string): string {
-    const api = API_ENDPOINT;
-    let base: string;
-
-    if (api.startsWith('http')) {
-      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      base = api.replace(/^https?/, scheme);
-    } else {
-      const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const host = api.replace(/^\/+/, '');
-      base = `${scheme}://${host}`;
-    }
-
-    return `${base}/ws?token=${encodeURIComponent(token)}`;
+    return `${this.WS_BASE}/ws?token=${encodeURIComponent(token)}`;
   }
 
   connect(token: string): void {
@@ -41,18 +28,13 @@ export class ChatboxService {
       (this.socket.readyState === WebSocket.OPEN ||
         this.socket.readyState === WebSocket.CONNECTING)
     ) {
-      console.warn('[WS] ya hay una conexión activa/pendiente');
       return;
     }
 
-    const websocketUrl = this.buildWsUrl(token);
-    this.socket = new WebSocket(websocketUrl);
+    const url = this.buildWsUrl(token);
+    this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
-      console.log('[WS] open', websocketUrl);
-      this.isOpen = true;
-      this.reconnectAttempts = 0;
-      this.startPing();
       this.flushQueue();
     };
 
@@ -65,10 +47,8 @@ export class ChatboxService {
       }
     };
 
-    this.socket.onclose = (ev) => {
-      console.warn('[WS] closed', ev.code, ev.reason);
-      this.cleanup();
-      this.scheduleReconnect(token);
+    this.socket.onclose = () => {
+      this.socket = null;
     };
 
     this.socket.onerror = (err) => {
@@ -77,49 +57,17 @@ export class ChatboxService {
   }
 
   disconnect(): void {
-    if (this.socket) {
-      try {
-        this.socket.close();
-      } catch {}
-    }
-    this.cleanup();
-  }
-
-  private cleanup() {
-    this.isOpen = false;
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer);
-      this.pingTimer = null;
-    }
+    try {
+      this.socket?.close();
+    } catch {}
     this.socket = null;
-  }
-
-  private scheduleReconnect(token: string) {
-    this.reconnectAttempts++;
-    const backoff = Math.min(
-      1000 * Math.pow(2, this.reconnectAttempts - 1),
-      this.maxBackoff
-    );
-    setTimeout(() => this.connect(token), backoff);
-  }
-
-  private startPing() {
-    this.pingTimer = setInterval(() => {
-      if (this.socket && this.isOpen) {
-        try {
-          this.socket.send(JSON.stringify({ type: 'ping', ts: Date.now() }));
-        } catch (e) {
-          console.warn('[WS] ping failed', e);
-        }
-      }
-    }, 25000);
+    this.pendingQueue.length = 0;
   }
 
   private flushQueue() {
     while (
-      this.isOpen &&
-      this.pendingQueue.length &&
-      this.socket?.readyState === WebSocket.OPEN
+      this.socket?.readyState === WebSocket.OPEN &&
+      this.pendingQueue.length
     ) {
       const payload = this.pendingQueue.shift();
       try {
@@ -136,13 +84,8 @@ export class ChatboxService {
     this.selectedUserSource.next(user);
   }
 
-  getMensajes(userId: number) {
-    const url = `${API_ENDPOINT}/messages/${userId}`;
-    const token = localStorage.getItem('access_token') || '';
-    const headers = token
-      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-      : undefined;
-    return this.http.get(url, { headers });
+  getMensajes(otherUserId: number) {
+    return this.http.get(`${this.API_BASE}/messages/${otherUserId}`);
   }
 
   enviarMensaje(mensaje: { receiver_id: number; content: string }) {
@@ -162,11 +105,13 @@ export class ChatboxService {
         }
       };
       this.socket.addEventListener('open', handler, { once: true });
+      this.pendingQueue.push(payload);
     } else {
-      console.warn('[WS] no conectado; solo persistirá por HTTP');
+      this.pendingQueue.push(payload);
+      console.warn('[WS] no conectado; el mensaje se envía solo por HTTP');
     }
 
-    return this.http.post(`${API_ENDPOINT}/messages/`, payload);
+    return this.http.post(`${this.API_BASE}/messages/`, payload);
   }
 
   getMensajesStream() {
